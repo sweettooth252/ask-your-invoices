@@ -1,0 +1,158 @@
+# ---------------------------------------------------------------------------
+# Night & Day semantic layer
+#
+# Every business term the app uses is defined here once. The AI assistant can
+# only pick names from this file, and the layer refuses combinations that
+# would produce a plausible-looking wrong number.
+#
+# one_per: the metric is only meaningful inside one value of something.
+#   one_per: [unit]  - adding litres of gin to kilos of limes gives nonsense
+#   one_per: [drink] - "cost per serve" of three drinks at once is meaningless
+# The layer checks every result row and refuses if the rule is broken.
+# ---------------------------------------------------------------------------
+version: 2
+
+datasets:
+  purchases:
+    description: Every line on every supplier invoice.
+    table: fct_invoice_line
+    joins:
+      - "LEFT JOIN dim_supplier ON fct_invoice_line.supplier_id = dim_supplier.supplier_id"
+      - "LEFT JOIN dim_product ON fct_invoice_line.product_id = dim_product.product_id"
+      - "LEFT JOIN dim_date ON fct_invoice_line.date_key = dim_date.date_key"
+    lineage:
+      - "fct_invoice_line.invoice_no"
+      - "dim_date.business_date"
+      - "fct_invoice_line.source_file"
+      - "fct_invoice_line.line_no"
+      - "dim_supplier.supplier_name"
+      - "dim_product.product_name"
+      - "fct_invoice_line.pack_raw"
+      - "fct_invoice_line.qty"
+      - "fct_invoice_line.unit_price_ex_gst"
+      - "fct_invoice_line.amount_ex_gst"
+    guards:
+      unit: "fct_invoice_line.base_unit"
+
+  drinks:
+    description: What each drink on the menu costs to make, from its spec and the prices actually paid.
+    table: fct_drink_cost
+    joins: []
+    grain_column: "fct_drink_cost.grain"
+    lineage:
+      - "fct_drink_ingredient_cost.drink"
+      - "fct_drink_ingredient_cost.period"
+      - "fct_drink_ingredient_cost.ingredient"
+      - "fct_drink_ingredient_cost.amount_label"
+      - "fct_drink_ingredient_cost.price_per_unit"
+      - "fct_drink_ingredient_cost.unit"
+      - "fct_drink_ingredient_cost.cost"
+      - "fct_drink_ingredient_cost.carried_forward"
+    lineage_table: fct_drink_ingredient_cost
+    guards:
+      drink: "fct_drink_cost.drink"
+
+dimensions:
+  supplier:
+    sql: {purchases: "dim_supplier.supplier_name"}
+    description: Who the invoice is from.
+  category:
+    sql: {purchases: "dim_product.category"}
+    description: Product group, e.g. Spirits, Coffee, Citrus & garnish, Milk & alternatives.
+  product:
+    sql: {purchases: "dim_product.product_name"}
+    description: One product from one supplier.
+  product_code:
+    sql: {purchases: "dim_product.code"}
+    description: The supplier's code for a product.
+  unit:
+    sql: {purchases: "fct_invoice_line.base_unit"}
+    description: Unit after pack sizes are normalised - L, kg or ea.
+  drink:
+    sql: {drinks: "fct_drink_cost.drink"}
+    description: A drink on the menu, e.g. Espresso Martini, Flat White.
+  drink_type:
+    sql: {drinks: "fct_drink_cost.drink_type"}
+    description: Cocktail or Coffee.
+  month:
+    sql: {purchases: "dim_date.month", drinks: "fct_drink_cost.period"}
+    grain: month
+    description: Calendar month as YYYY-MM.
+  quarter:
+    sql: {purchases: "dim_date.quarter", drinks: "fct_drink_cost.period"}
+    grain: quarter
+    description: Calendar quarter as YYYY-Qn.
+  week:
+    sql: {purchases: "dim_date.week_start"}
+    description: Monday of the invoice week.
+
+metrics:
+  # ---- purchases -----------------------------------------------------------
+  spend:
+    dataset: purchases
+    label: Spend (ex GST)
+    type: simple
+    sql: "SUM(fct_invoice_line.amount_ex_gst)"
+    format: currency
+    description: Total of invoice line amounts, excluding GST.
+  invoices:
+    dataset: purchases
+    label: Invoices
+    type: simple
+    sql: "COUNT(DISTINCT fct_invoice_line.invoice_no)"
+    format: number
+  products_bought:
+    dataset: purchases
+    label: Products bought
+    type: simple
+    sql: "COUNT(DISTINCT fct_invoice_line.product_id)"
+    format: number
+  quantity:
+    dataset: purchases
+    label: Quantity
+    type: simple
+    sql: "SUM(fct_invoice_line.qty_base)"
+    format: quantity
+    one_per: [unit]
+    description: Litres, kilos or units bought, after pack sizes are normalised.
+  avg_price_per_unit:
+    dataset: purchases
+    label: Price per unit
+    type: derived
+    sql: "spend / NULLIF(quantity, 0)"
+    format: unit_price
+    one_per: [unit]
+    description: Spend divided by quantity - weighted by what was actually bought.
+
+  # ---- drinks --------------------------------------------------------------
+  cost_per_serve:
+    dataset: drinks
+    label: Cost per serve
+    type: simple
+    sql: "SUM(fct_drink_cost.cost_per_serve)"
+    format: currency_cents
+    one_per: [drink]
+    description: Ingredient cost of one drink, made to spec, at the prices actually paid.
+  menu_price:
+    dataset: drinks
+    label: Menu price (ex GST)
+    type: simple
+    sql: "SUM(fct_drink_cost.menu_price_ex_gst)"
+    format: currency_cents
+    one_per: [drink]
+  margin_per_serve:
+    dataset: drinks
+    label: Gross margin per serve
+    type: derived
+    sql: "menu_price - cost_per_serve"
+    format: currency_cents
+    one_per: [drink]
+  pour_cost_pct:
+    dataset: drinks
+    label: Pour cost %
+    type: derived
+    sql: "cost_per_serve / NULLIF(menu_price, 0)"
+    format: percent
+    description: >
+      Ingredient cost as a share of the menu price ex GST. Across several drinks
+      it is calculated as if one of each were sold, because there is no sales data.
