@@ -1,0 +1,28 @@
+# How products are grouped into categories.
+#
+# A business rule, not code, so it lives in a file a bar manager could edit.
+# Rules are checked top to bottom and the first match wins - which is why
+# "Coffee Liqueur" must be caught by Liqueurs before "coffee" sends it to Coffee.
+#
+# Anything that matches nothing lands in "Uncategorised" and is listed when the
+# warehouse is built, so a new product never silently vanishes from a total.
+
+categories:
+  - name: Surcharges
+    keywords: [surcharge, freight, delivery fee, fuel levy]
+  - name: Liqueurs & aperitifs
+    keywords: [liqueur, aperitivo, vermouth, triple sec, bitter]
+  - name: Spirits
+    keywords: [vodka, gin, tequila, rum, whisky, whiskey, mezcal, brandy]
+  - name: Wine & sparkling
+    keywords: [prosecco, champagne, wine, sparkling]
+  - name: Coffee
+    keywords: [espresso beans, filter beans, decaf, cold brew, coffee beans]
+  - name: Milk & alternatives
+    keywords: [milk, cream, yoghurt]
+  - name: Citrus & garnish
+    keywords: [lemon, lime, orange, mint, grapefruit, cucumber]
+  - name: Mixers & syrups
+    keywords: [syrup, tonic, soda, ginger beer, bitters]
+  - name: Packaging
+    keywords: [cup, lid, straw, napkin, container]
