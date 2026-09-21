@@ -1,0 +1,25 @@
+# My first semantic layer: one dataset, five dimensions, three measures.
+datasets:
+  purchases:
+    table: fct_invoice_line
+    joins:
+      - "LEFT JOIN dim_supplier ON fct_invoice_line.supplier_id = dim_supplier.supplier_id"
+      - "LEFT JOIN dim_product ON fct_invoice_line.product_id = dim_product.product_id"
+      - "LEFT JOIN dim_date ON fct_invoice_line.date_key = dim_date.date_key"
+
+dimensions:
+  supplier: "dim_supplier.supplier_name"
+  category: "dim_product.category"
+  product: "dim_product.product_name"
+  unit: "fct_invoice_line.base_unit"
+  quarter: "dim_date.quarter"
+
+metrics:
+  spend:
+    sql: "SUM(fct_invoice_line.amount_ex_gst)"
+  quantity:
+    sql: "SUM(fct_invoice_line.qty_base)"
+    one_per: unit
+  price_per_unit:
+    sql: "SUM(fct_invoice_line.amount_ex_gst) / SUM(fct_invoice_line.qty_base)"
+    one_per: unit
