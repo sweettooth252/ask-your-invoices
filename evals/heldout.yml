@@ -1,0 +1,17 @@
+# Held-out questions: ask 3-5 people who have NOT seen this repo to write
+# questions they'd ask a cafe-bar's invoices. Write the correct plan for each
+# yourself, in the same format as questions.yml, then run:
+#
+#     python -m evals.run_evals --suite heldout
+#
+# This is the number to put in the README. The seed set is optimistic because
+# the same person wrote the questions and the planner rules.
+answer:
+  - q: How much are we spending on milk every month?
+    intent: query
+    metrics: [spend]
+    dimensions: [month]
+    filters: {category: Milk & alternatives}
+refuse:
+  - q: Which barista wastes the most milk?
+guard: []

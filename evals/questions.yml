@@ -1,0 +1,108 @@
+# What a good analyst would have done with each question.
+#
+# Scoring compares the plan, not the wording: right intent, right measures,
+# right groupings, right filter values. If the plan is right, the number is
+# right, because the number comes from the tested semantic layer.
+#
+# Three kinds of case:
+#   answer  - there is an honest answer; the plan must match
+#   refuse  - there is no honest answer; the assistant must decline
+#   guard   - the question is fair but the obvious answer mixes units or
+#             drinks; the semantic layer must stop it
+
+answer:
+  - q: How much did we spend with each supplier?
+    intent: query
+    metrics: [spend]
+    dimensions: [supplier]
+  - q: Which category do we spend the most on?
+    intent: query
+    metrics: [spend]
+    dimensions: [category]
+  - q: Spend on spirits by month
+    intent: query
+    metrics: [spend]
+    dimensions: [month]
+    filters: {category: Spirits}
+  - q: How much did we spend at Harbourline in June?
+    intent: query
+    metrics: [spend]
+    filters: {supplier: Harbourline Spirits Pty Ltd, month: 2026-06}
+  - q: What are we paying per kg for limes each month?
+    intent: query
+    metrics: [avg_price_per_unit]
+    dimensions: [month]
+    filters: {product: [Lime Tahitian]}
+  - q: How much oat milk did we buy from each supplier?
+    intent: query
+    metrics: [spend]
+    dimensions: [supplier]
+    filters: {product: [Oat Milk Barista]}
+  - q: What does an espresso martini cost to make?
+    intent: query
+    metrics: [cost_per_serve]
+    filters: {drink: Espresso Martini}
+  - q: What's our margin on a flat white?
+    intent: query
+    metrics: [margin_per_serve]
+    filters: {drink: Flat White}
+  - q: What's the pour cost of each cocktail?
+    intent: query
+    metrics: [pour_cost_pct]
+    dimensions: [drink]
+    filters: {drink_type: Cocktail}
+  - q: Pour cost for cocktails vs coffee by quarter
+    intent: query
+    metrics: [pour_cost_pct]
+    dimensions: [drink_type, quarter]
+  - q: What does each drink cost to make?
+    intent: query
+    metrics: [cost_per_serve]
+    dimensions: [drink]
+  - q: How many invoices did we get from Ember each month?
+    intent: query
+    metrics: [invoices]
+    dimensions: [month]
+    filters: {supplier: Ember & Co Coffee Roasters}
+  - q: Why does the margarita cost more to make this quarter than 2025-Q3?
+    intent: explain_drink
+    drink: Margarita
+    before: 2025-Q3
+    after: 2026-Q2
+  - q: Why did the espresso martini get more expensive to make?
+    intent: explain_drink
+    drink: Espresso Martini
+    before: 2026-Q1
+    after: 2026-Q2
+  - q: Why did we spend more at Ember this quarter than last quarter?
+    intent: explain_spend
+    before: 2026-Q1
+    after: 2026-Q2
+    filters: {supplier: Ember & Co Coffee Roasters}
+  - q: What changed in our coffee spend between 2025-Q3 and 2026-Q2?
+    intent: explain_spend
+    before: 2025-Q3
+    after: 2026-Q2
+    filters: {category: Coffee}
+
+refuse:
+  - q: Which cocktail sold the most?
+    why: No sales data.
+  - q: What's our total profit this year?
+    why: No wages, rent or revenue.
+  - q: Which supplier is the most reliable?
+    why: Invoices don't record delivery performance.
+  - q: What will limes cost next month?
+    why: The assistant reports what was paid; it does not forecast.
+  - q: How many covers did we do on Saturday?
+    why: No sales or covers data.
+  - q: Which barista wastes the most milk?
+    why: No staff data. Found by the first held-out question - "barista" used to match the supplier Bar & Barista Supplies.
+
+guard:
+  - q: What was the average price per unit by category?
+    why: Categories mix litres, kilos and units.
+  - q: How many litres and kilos did we buy in total?
+    why: Adding litres to kilos is meaningless.
+  - q: What does a cocktail cost to make on average by drink type?
+    why: Cost per serve across several drinks has no meaning.
