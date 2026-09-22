@@ -12,6 +12,17 @@ answer:
     metrics: [spend]
     dimensions: [month]
     filters: {category: Milk & alternatives}
+  - q: How much did we spend on coffee each quarter?
+    intent: query
+    metrics: [spend]
+    dimensions: [quarter]
+    filters: {category: Coffee}
+  - q: Is Northside cheaper than Bar & Barista for oat milk?
+    intent: query
+    metrics: [avg_price_per_unit]
+    dimensions: [supplier]
+    filters: {product: Oat Milk Barista}
 refuse:
   - q: Which barista wastes the most milk?
-guard: []
+guard:
+  - q: What is the total quantity we bought by category?
