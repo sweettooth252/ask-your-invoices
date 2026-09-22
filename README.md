@@ -4,6 +4,8 @@
 
 Built by Linh Ngan Nguyen (Master of Business Analytics). The idea comes from working in food and beverage at the Ritz-Carlton, where supplier invoices arrive every day and nobody has time to read them.
 
+**Live demo:** https://ask-your-invoices-linh.streamlit.app/
+
 Drop in a year of supplier invoice PDFs. Ask in plain English what you spend,
 what you pay per litre, or what an espresso martini costs to make - and why it
 costs more than it did. Every answer comes with the invoice lines that prove it,
