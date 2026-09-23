@@ -141,6 +141,8 @@ CATALOGUE = [
     ("merri", "MC-OJU-2L", "Orange Juice Chilled", "6 x 2L", 12, "L", 39.60, False, (1, 2), 0.75),
     ("merri", "MC-OLI-2K", "Queen Green Olives", "2KG", 2, "kg", 26.00, True, (1, 1), 0.45),
     ("merri", "MC-CHR-1K", "Maraschino Cherries", "1KG", 1, "kg", 21.00, True, (1, 1), 0.40),
+    ("merri", "MC-WOR-1L", "Worcestershire Sauce", "6 x 1L", 6, "L", 42.00, True, (1, 1), 0.30),
+    ("merri", "MC-TAB-60", "Tabasco Pepper Sauce", "12 x 60ML", 0.72, "L", 63.00, True, (1, 1), 0.30),
 ]
 
 BY_SUPPLIER = {}
