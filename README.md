@@ -40,11 +40,11 @@ This one is built the other way round:
 ## What's inside
 
 ```
-make_invoices.py        a year of invoices from 5 fictional suppliers, 4 layouts
+make_invoices.py        a year of invoices from 6 fictional suppliers, 5 layouts
 creep/                  PDF reader and pack-size parser (from Price Creep)
 askinv/ingest.py        PDFs -> star schema in DuckDB, with lineage on every line
 semantic/model.yml      the semantic layer: 2 datasets, 9 measures, 10 dimensions
-semantic/recipes.yml    9 drink specs; how invoices become cost per serve
+semantic/recipes.yml    33 drink specs; how invoices become cost per serve
 semantic/categories.yml product categories, as editable business rules
 askinv/layer.py         the compiler, the unit/drink guards, drill-through
 askinv/menu.py          invoices -> ingredient prices -> cost per drink
@@ -53,6 +53,14 @@ askinv/planner.py       English -> checked plan (rules, or Gemini free tier)
 askinv/answer.py        plan -> sentence + table + receipts; the number checker
 evals/                  planning accuracy, refusals, and number grounding
 app.py                  Streamlit chat
+| Screen | What it answers |
+| --- | --- |
+| **Overview** | How is the venue doing? Spend against last quarter, split into price and volume, pour cost by drink type, biggest movers, what needs a phone call. |
+| **Ask** | Anything the semantic layer can prove, with the invoice lines behind it. |
+| **Analytics** | Spend by month, supplier, category and product; price per litre or kilo over time. Every table downloads as CSV. |
+| **Alerts** | Price rises, pack shrinks and cheaper alternatives, with the dollar impact a year and the drinks each one hits. |
+| **Invoice inbox** | Drop in today's PDFs: do the lines add up, has any price moved, which drinks would feel it. |
+| **Recipes** | 33 specs, costed at the prices actually paid, with a what-if editor. |
 ```
 
 ## Run it
@@ -60,9 +68,9 @@ app.py                  Streamlit chat
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python make_invoices.py      # 291 invoice PDFs + ground truth
+python make_invoices.py      # 326 invoice PDFs + ground truth
 python -m askinv.ingest      # read them into the warehouse, cost the menu
-pytest -q                    # 20 tests
+pytest -q                    # 41 tests
 python -m evals.run_evals
 streamlit run app.py
 ```
@@ -72,7 +80,7 @@ model planner and model wording.
 
 ## Results
 
-- **Extraction**: 1,016 of 1,016 invoice lines read exactly; all 291 invoices
+- **Extraction**: 1,529 of 1,529 invoice lines read exactly; all 326 invoices
   reconcile to their printed subtotal.
 - **Planning** (rules planner): 16/16 answerable questions planned correctly,
   6/6 out-of-scope questions refused, 3/3 unsafe questions stopped by the layer.
@@ -99,6 +107,10 @@ by people who haven't seen the vocabulary - `evals/heldout.yml` is where it goes
 - - Oat milk costs about $2.95 a litre from Bar & Barista and $3.35 from
   Northside Dairy, for the same product. Buying it all from one supplier
   would save about 40c a litre.
+- Chai concentrate has crept up 25% a litre over the year, about $886 a year at
+  current volumes, and it lands on exactly one drink: the chai latte.
+- Switching the sours from egg white to a vegan foamer took about 40c off every
+  sour, visible immediately because the spec is data, not code.
 
 ## Data
 

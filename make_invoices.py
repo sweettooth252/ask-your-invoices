@@ -3,7 +3,7 @@ Generate a financial year (FY26) of supplier invoices for a Melbourne cafe-bar, 
 plus the right answer for every line.
 
 The venue is "Night & Day": specialty coffee from 7am, cocktails from 5pm.
-Five fictional suppliers, four different invoice layouts.
+Six fictional suppliers, five different invoice layouts.
 
 Seven things are planted in the data. Nothing downstream is told about them:
 
@@ -64,6 +64,13 @@ SUPPLIERS = {
     "barsupply": {"name": "Bar & Barista Supplies", "abn": "30 559 148 002",
                   "address": "14 Trade Place, Coburg North VIC 3058",
                   "layout": "columns_with_pack", "cadence": 14, "prefix": "BB"},
+    # A broad-line providore: mixers, syrups, teas, and a second spirits range.
+    # Its invoice puts the description first and the code second, and calls the
+    # columns PARTICULARS / REF / UOM / DELIVERED / U-PRICE / EXT - a layout the
+    # reader has never seen, which is the point of adding it.
+    "merri": {"name": "Merri Creek Providore", "abn": "63 118 740 526",
+              "address": "9 Copeland Street, Preston VIC 3072",
+              "layout": "description_first", "cadence": 10, "prefix": "MC"},
 }
 
 # supplier, code, description, pack, base_qty, base_unit, price per pack ex GST
@@ -99,6 +106,41 @@ CATALOGUE = [
     ("barsupply", "BS-OAT-1L", "Oat Milk Barista", "12 x 1L", 12, "L", 34.80, True, (1, 2), 0.90),
     ("barsupply", "BS-CUP-08", "Takeaway Cup 8oz Double Wall", "CTN 500", 500, "ea", 82.00, True, (1, 1), 0.90),
     ("barsupply", "BS-LID-08", "Sip Lid 8oz", "CTN 1000", 1000, "ea", 46.00, True, (1, 1), 0.60),
+
+    # Merri Creek Providore - mixers and garnish
+    ("merri", "MC-GRF-25", "Pink Grapefruit Soda", "24 x 250ML", 6, "L", 44.40, True, (1, 2), 0.80),
+    ("merri", "MC-GNB-25", "Ginger Beer", "24 x 250ML", 6, "L", 46.80, True, (1, 2), 0.75),
+    ("merri", "MC-AGV-1L", "Agave Syrup", "6 x 1L", 6, "L", 96.00, True, (1, 1), 0.55),
+    ("merri", "MC-CRN-1L", "Cranberry Juice", "12 x 1L", 12, "L", 54.00, True, (1, 1), 0.50),
+    ("merri", "MC-BIT-200", "Aromatic Bitters", "6 x 200ML", 1.2, "L", 96.00, True, (1, 1), 0.30),
+    ("merri", "MC-FOA-500", "Vegan Cocktail Foamer", "6 x 500ML", 3, "L", 108.00, True, (1, 1), 0.45),
+    ("merri", "MC-CUC-10", "Cucumber Continental", "10KG", 10, "kg", 32.00, False, (1, 1), 0.45),
+
+    # Merri Creek Providore - coffee and tea extras
+    ("merri", "MC-CHA-1L", "Chai Concentrate", "6 x 1L", 6, "L", 78.00, True, (1, 2), 0.75),
+    ("merri", "MC-MAT-500", "Matcha Powder Ceremonial", "500G", 0.5, "kg", 42.00, True, (1, 1), 0.50),
+    ("merri", "MC-CHO-1K", "Drinking Chocolate", "10 x 1KG", 10, "kg", 110.00, True, (1, 1), 0.65),
+    ("merri", "MC-VAN-1L", "Vanilla Syrup", "6 x 1L", 6, "L", 54.00, True, (1, 1), 0.60),
+    ("merri", "MC-CAR-1L", "Caramel Syrup", "6 x 1L", 6, "L", 54.00, True, (1, 1), 0.55),
+    ("merri", "MC-HON-3K", "Honey Yellow Box", "3KG", 3, "kg", 36.00, False, (1, 1), 0.40),
+    ("merri", "MC-ALM-1L", "Almond Milk Barista", "12 x 1L", 12, "L", 42.00, True, (1, 2), 0.70),
+
+    # Merri Creek Providore - second spirits and wine range
+    ("merri", "MC-WHI-70", "Ironbark Blended Whisky", "6 x 700ML", 4.2, "L", 210.00, True, (1, 1), 0.55),
+    ("merri", "MC-RUM-70", "Harbourside Spiced Rum", "6 x 700ML", 4.2, "L", 186.00, True, (1, 1), 0.45),
+    ("merri", "MC-WWH-75", "Pinot Grigio White Wine", "12 x 750ML", 9, "L", 132.00, True, (1, 2), 0.70),
+    ("merri", "MC-WRD-75", "Shiraz Red Wine", "12 x 750ML", 9, "L", 144.00, True, (1, 1), 0.65),
+    ("merri", "MC-MIN-75", "Sparkling Mineral Water", "12 x 750ML", 9, "L", 42.00, True, (1, 2), 0.80),
+    ("merri", "MC-RUW-70", "Caribbean White Rum", "6 x 700ML", 4.2, "L", 162.00, True, (1, 1), 0.60),
+    ("merri", "MC-VDR-10", "Dry Vermouth", "6 x 1L", 6, "L", 90.00, True, (1, 1), 0.40),
+    ("merri", "MC-AMR-70", "Amaretto Liqueur", "6 x 700ML", 4.2, "L", 168.00, True, (1, 1), 0.35),
+    ("merri", "MC-TOM-1L", "Tomato Juice", "12 x 1L", 12, "L", 48.00, True, (1, 1), 0.45),
+    # 100% fruit juice is GST-free in Australia, unlike the tomato juice above,
+    # which is a flavoured beverage. Details like this are what make a demo
+    # believable to anyone who has reconciled a real invoice.
+    ("merri", "MC-OJU-2L", "Orange Juice Chilled", "6 x 2L", 12, "L", 39.60, False, (1, 2), 0.75),
+    ("merri", "MC-OLI-2K", "Queen Green Olives", "2KG", 2, "kg", 26.00, True, (1, 1), 0.45),
+    ("merri", "MC-CHR-1K", "Maraschino Cherries", "1KG", 1, "kg", 21.00, True, (1, 1), 0.40),
 ]
 
 BY_SUPPLIER = {}
@@ -126,6 +168,9 @@ def price_multiplier(code, d):
 
     if code == "EC-SO-1K" and d < date(2026, 2, 16):   # 5. opening price
         mult *= 0.82
+
+    if code == "MC-CHA-1L":                      # 8. chai concentrate creeps too
+        mult *= 1.0 + 0.021 * m
 
     if code in PRODUCE:                          # 6. produce is a market
         mult *= 1.0 + 0.16 * random.uniform(-1, 1)
@@ -337,11 +382,41 @@ def render_minimal(c, inv, sup):
     _totals(c, inv, y - 3 * mm)
 
 
+def render_description_first(c, inv, sup):
+    """Merri Creek: description first, code second, and column names nobody
+    else uses. Reading this layout is the test of a header-driven reader: it
+    never learns a supplier, it reads whatever the header row says."""
+    y = _header(c, inv, sup, 275 * mm)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(20 * mm, y, "PARTICULARS")
+    c.drawString(94 * mm, y, "REF")
+    c.drawString(116 * mm, y, "UOM")
+    c.drawRightString(143 * mm, y, "QTY")
+    c.drawRightString(168 * mm, y, "U/PRICE")
+    c.drawRightString(190 * mm, y, "EXT")
+    c.setLineWidth(0.6)
+    c.line(20 * mm, y - 2 * mm, 190 * mm, y - 2 * mm)
+    y -= 7 * mm
+
+    c.setFont("Helvetica", 8)
+    for l in inv["lines"]:
+        star = "" if l["gst_applies"] else " *"
+        c.drawString(20 * mm, y, (l["description"] + star)[:40])
+        c.drawString(94 * mm, y, l["code"])
+        c.drawString(116 * mm, y, l["pack_raw"])
+        c.drawRightString(143 * mm, y, str(l["qty"]))
+        c.drawRightString(168 * mm, y, f"{l['unit_price_ex_gst']:,.2f}")
+        c.drawRightString(190 * mm, y, f"{l['amount_ex_gst']:,.2f}")
+        y -= 5 * mm
+    _totals(c, inv, y - 3 * mm)
+
+
 RENDERERS = {
     "columns_with_pack": render_columns_with_pack,
     "pack_in_description": render_pack_in_description,
     "gst_column": render_gst_column,
     "minimal": render_minimal,
+    "description_first": render_description_first,
 }
 
 

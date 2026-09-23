@@ -12,12 +12,13 @@ import os
 import streamlit as st
 
 from askinv.answer import ask
-from askinv.ui import download, page
+from askinv.ui import download, invoice_stats, page
 
 sl, vocab = page("Ask", icon="💬")
 
 st.title("Ask your invoices")
-st.write("291 supplier invoices from five suppliers, turned into a semantic layer. "
+stats = invoice_stats()
+st.write(f"{int(stats['n']):,} supplier invoices turned into a semantic layer. "
          "Ask about spend, prices, or what each drink costs to make.")
 
 has_key = bool(os.environ.get("GEMINI_API_KEY"))
@@ -33,7 +34,7 @@ SUGGESTIONS = [
     "Why does the espresso martini cost more to make this quarter than 2025-Q3?",
     "Pour cost for cocktails vs coffee by quarter",
     "Why did we spend more at Ember this quarter than last quarter?",
-    "What are we paying per kg for limes each month?",
+    "What does each cocktail cost to make?",
     "What was the average price per unit by category?",
     "Which cocktail sold the most?",
 ]

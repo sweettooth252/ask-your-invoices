@@ -14,15 +14,24 @@ categories:
     keywords: [liqueur, aperitivo, vermouth, triple sec, bitter]
   - name: Spirits
     keywords: [vodka, gin, tequila, rum, whisky, whiskey, mezcal, brandy]
+  # Soft drinks sit above wine so "Sparkling Mineral Water" isn't filed as wine,
+  # and above citrus so "Pink Grapefruit Soda" isn't filed as fruit. Order is the
+  # whole rulebook here: first match wins.
+  - name: Soft drinks & juice
+    keywords: [grapefruit soda, ginger beer, cranberry juice, juice, mineral water, cola]
   - name: Wine & sparkling
     keywords: [prosecco, champagne, wine, sparkling]
   - name: Coffee
     keywords: [espresso beans, filter beans, decaf, cold brew, coffee beans]
+  - name: Tea & chocolate
+    keywords: [chai, matcha, tea, drinking chocolate, cocoa]
   - name: Milk & alternatives
     keywords: [milk, cream, yoghurt]
   - name: Citrus & garnish
-    keywords: [lemon, lime, orange, mint, grapefruit, cucumber]
+    keywords: [lemon, lime, orange, mint, grapefruit, cucumber, olive, cherries, cherry]
   - name: Mixers & syrups
-    keywords: [syrup, tonic, soda, ginger beer, bitters]
+    keywords: [syrup, tonic, soda, ginger beer, bitters, foamer]
   - name: Packaging
     keywords: [cup, lid, straw, napkin, container]
+  - name: Pantry
+    keywords: [honey, egg, sugar, salt]

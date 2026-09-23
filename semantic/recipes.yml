@@ -31,8 +31,39 @@ ingredients:
   lime_juice:       {products: ["1460"], yield: 0.45}   # litres of juice per kg
   lemon_juice:      {products: ["1455"], yield: 0.40}
   orange_garnish:   {products: ["1470"]}                 # a wheel or twist, by weight
+  mint:             {products: ["1510"]}                 # bunches, counted singly
   cup_8oz:          {products: [BS-CUP-08]}
   lid_8oz:          {products: [BS-LID-08]}
+
+  # From Merri Creek Providore, the sixth supplier
+  whisky:           {products: [MC-WHI-70]}
+  spiced_rum:       {products: [MC-RUM-70]}
+  white_wine:       {products: [MC-WWH-75]}
+  red_wine:         {products: [MC-WRD-75]}
+  grapefruit_soda:  {products: [MC-GRF-25]}
+  ginger_beer:      {products: [MC-GNB-25]}
+  cranberry_juice:  {products: [MC-CRN-1L]}
+  mineral_water:    {products: [MC-MIN-75]}
+  agave_syrup:      {products: [MC-AGV-1L]}
+  vanilla_syrup:    {products: [MC-VAN-1L]}
+  caramel_syrup:    {products: [MC-CAR-1L]}
+  aromatic_bitters: {products: [MC-BIT-200]}
+  chai_concentrate: {products: [MC-CHA-1L]}
+  matcha:           {products: [MC-MAT-500]}
+  drinking_chocolate: {products: [MC-CHO-1K]}
+  honey:            {products: [MC-HON-3K]}
+  almond_milk:      {products: [MC-ALM-1L]}
+  foamer:           {products: [MC-FOA-500]}   # vegan foamer: what a sour uses now
+  white_rum:        {products: [MC-RUW-70]}
+  dry_vermouth:     {products: [MC-VDR-10]}
+  amaretto:         {products: [MC-AMR-70]}
+  tomato_juice:     {products: [MC-TOM-1L]}
+  olives:           {products: [MC-OLI-2K]}
+  cherries:         {products: [MC-CHR-1K]}
+  # Bought by the bottle, not squeezed: a venue doesn't juice navels for a
+  # $16 mimosa. The whole oranges above are for garnish.
+  orange_juice:     {products: [MC-OJU-2L]}
+  cucumber:         {products: [MC-CUC-10], yield: 0.85}   # kg of cucumber per kg used
 
 # price is the menu price including GST, as printed on the menu
 drinks:
@@ -76,3 +107,116 @@ drinks:
     type: Coffee
     price: 6.00
     spec: {cold_brew: 90ml}
+
+  # ------------------------------------------------------------------ added
+  # Drinks built from the Merri Creek range. Nothing else had to change: the
+  # dashboard, the chat, the alerts and the tests all pick them up from here.
+  Paloma:
+    type: Cocktail
+    price: 21.00
+    spec: {tequila: 45ml, grapefruit_soda: 120ml, lime_juice: 15ml, agave_syrup: 10ml}
+  Moscow Mule:
+    type: Cocktail
+    price: 20.00
+    spec: {vodka: 45ml, ginger_beer: 120ml, lime_juice: 15ml}
+  Whisky Sour:
+    type: Cocktail
+    price: 24.00
+    spec: {whisky: 45ml, lemon_juice: 25ml, sugar_syrup: 15ml, foamer: 4ml,
+           aromatic_bitters: 2ml}
+  Dark & Stormy:
+    type: Cocktail
+    price: 20.00
+    spec: {spiced_rum: 45ml, ginger_beer: 120ml, lime_juice: 15ml}
+  Cosmopolitan:
+    type: Cocktail
+    price: 22.00
+    spec: {vodka: 40ml, triple_sec: 15ml, cranberry_juice: 30ml, lime_juice: 15ml}
+  Chai Latte:
+    type: Coffee
+    price: 6.00
+    spec: {chai_concentrate: 60ml, full_cream_milk: 180ml}
+  Matcha Latte:
+    type: Coffee
+    price: 6.50
+    spec: {matcha: 3g, oat_milk: 200ml}
+  Mocha:
+    type: Coffee
+    price: 6.00
+    spec: {espresso_beans: 18g, drinking_chocolate: 20g, full_cream_milk: 170ml}
+  Hot Chocolate:
+    type: Coffee
+    price: 5.50
+    spec: {drinking_chocolate: 25g, full_cream_milk: 220ml}
+
+  # ------------------------------------------------- the classics, by family
+  # Spirit-forward
+  Old Fashioned:
+    type: Cocktail
+    price: 24.00
+    spec: {whisky: 60ml, sugar_syrup: 7.5ml, aromatic_bitters: 2ml, orange_garnish: 10g}
+  Manhattan:
+    type: Cocktail
+    price: 24.00
+    spec: {whisky: 50ml, sweet_vermouth: 20ml, aromatic_bitters: 2ml, cherries: 10g}
+  Dry Martini:
+    type: Cocktail
+    price: 23.00
+    spec: {gin: 60ml, dry_vermouth: 10ml, olives: 15g}
+  Boulevardier:
+    type: Cocktail
+    price: 23.00
+    spec: {whisky: 30ml, bitter_aperitivo: 30ml, sweet_vermouth: 30ml, orange_garnish: 10g}
+  Americano:
+    type: Cocktail
+    price: 18.00
+    spec: {bitter_aperitivo: 30ml, sweet_vermouth: 30ml, soda: 60ml, orange_garnish: 10g}
+
+  # Sours
+  Daiquiri:
+    type: Cocktail
+    price: 20.00
+    spec: {white_rum: 45ml, lime_juice: 25ml, sugar_syrup: 15ml}
+  Gimlet:
+    type: Cocktail
+    price: 20.00
+    spec: {gin: 60ml, lime_juice: 25ml, sugar_syrup: 15ml}
+  Tommy's Margarita:
+    type: Cocktail
+    price: 22.00
+    spec: {tequila: 50ml, lime_juice: 25ml, agave_syrup: 15ml}
+  Bee's Knees:
+    type: Cocktail
+    price: 21.00
+    spec: {gin: 45ml, lemon_juice: 25ml, honey: 18g, foamer: 4ml}
+  Amaretto Sour:
+    type: Cocktail
+    price: 21.00
+    spec: {amaretto: 45ml, whisky: 15ml, lemon_juice: 25ml, sugar_syrup: 10ml,
+           foamer: 4ml, cherries: 10g}
+
+  # Long and refreshing
+  Mojito:
+    type: Cocktail
+    price: 20.00
+    spec: {white_rum: 45ml, lime_juice: 25ml, sugar_syrup: 15ml, mint: 0.15ea,
+           soda: 60ml}
+  Cucumber Collins:
+    type: Cocktail
+    price: 20.00
+    spec: {gin: 45ml, lemon_juice: 25ml, sugar_syrup: 15ml, soda: 60ml,
+           cucumber: 30g}
+  Bloody Mary:
+    type: Cocktail
+    price: 20.00
+    spec: {vodka: 45ml, tomato_juice: 120ml, lemon_juice: 10ml, cucumber: 20g}
+
+  # Sparkling
+  French 75:
+    type: Cocktail
+    price: 22.00
+    spec: {gin: 30ml, lemon_juice: 15ml, sugar_syrup: 10ml, prosecco: 60ml}
+  Mimosa:
+    type: Cocktail
+    price: 16.00
+    spec: {prosecco: 90ml, orange_juice: 60ml}

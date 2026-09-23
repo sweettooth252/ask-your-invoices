@@ -181,3 +181,78 @@ def test_the_recipe_library_lists_every_drink():
     lib = ins.recipe_library(recipes)
     assert set(lib["drink"]) == set(recipes["drinks"])
     assert (lib[lib["drink"] == "Batch Filter"]["serves_per_batch"] == 10).all()
+
+
+# ---------------------------------------------------- the sixth supplier
+def test_a_layout_the_reader_had_never_seen_is_read_correctly():
+    """Merri Creek puts the description first, the code second, and names its
+    columns PARTICULARS / REF / UOM / QTY / U-PRICE / EXT. The reader is driven
+    by the header row, not by which supplier sent the invoice, so it copes."""
+    import glob
+    from creep.extract import read_invoice
+
+    paths = sorted(glob.glob(str(Path(DB_PATH).parent / "invoices" / "MC-*.pdf")))
+    assert len(paths) > 20
+    for path in paths[:10]:
+        inv = read_invoice(path)
+        assert inv.supplier_name == "Merri Creek Providore"
+        assert inv.lines, f"no lines read from {path}"
+        total = round(sum(l.amount_ex_gst or 0 for l in inv.lines), 2)
+        assert total == pytest.approx(inv.subtotal_ex_gst, abs=0.02)
+        for line in inv.lines:
+            assert line.price_per_base_unit, f"{line.code} has no price per unit"
+
+
+def test_the_new_products_are_categorised_not_dumped(sl):
+    """A product nobody wrote a rule for lands in 'Uncategorised' and is listed
+    when the warehouse is built, so it can never vanish from a total quietly."""
+    for product, category in [("Pink Grapefruit Soda", "Soft drinks & juice"),
+                              ("Sparkling Mineral Water", "Soft drinks & juice"),
+                              ("Chai Concentrate", "Tea & chocolate"),
+                              ("Shiraz Red Wine", "Wine & sparkling"),
+                              ("Ironbark Blended Whisky", "Spirits"),
+                              ("Honey Yellow Box", "Pantry"),
+                              ("Queen Green Olives", "Citrus & garnish"),
+                              ("Vegan Cocktail Foamer", "Mixers & syrups")]:
+        got = sl.query({"metrics": ["spend"], "dimensions": ["category"],
+                        "filters": [{"dimension": "product", "value": product}]})
+        assert got["category"].iloc[0] == category, product
+
+
+def test_the_new_drinks_are_costed_from_real_invoices(sl):
+    drinks = set(sl.values("drink", "drinks"))
+    for new in ["Paloma", "Moscow Mule", "Whisky Sour", "Chai Latte", "Matcha Latte",
+                "Mocha", "Hot Chocolate", "Cosmopolitan", "Dark & Stormy",
+                "Old Fashioned", "Manhattan", "Dry Martini", "Daiquiri", "Mojito",
+                "Americano", "Boulevardier", "Bloody Mary", "Bee's Knees", "Gimlet",
+                "French 75", "Mimosa", "Tommy's Margarita", "Amaretto Sour",
+                "Cucumber Collins"]:
+        assert new in drinks
+    board = ins.menu_board(sl)
+    assert board["cost_per_serve"].gt(0).all()
+    assert board["pour_cost_pct"].between(0.05, 0.45).all()
+
+
+def test_the_chai_creep_is_found_and_tied_to_its_drink():
+    """The eighth planted problem: chai concentrate rising about 2% a month.
+    It only hits one drink, which is what makes it easy to act on."""
+    a = ins.alerts()
+    chai = a[a["title"].str.contains("MC-CHA-1L")]
+    assert len(chai) == 1
+    assert chai.iloc[0]["kind"] == "creep"
+    assert chai.iloc[0]["drinks_affected"] == "Chai Latte"
+
+
+def test_a_sour_uses_foamer_not_egg(sl):
+    """The bar switched to a vegan foamer, so no recipe should still call for an
+    egg - and nothing should be costed from a product that isn't bought."""
+    from askinv.menu import load_recipes
+    recipes = load_recipes()
+    assert "egg" not in recipes["ingredients"]
+    for drink, d in recipes["drinks"].items():
+        assert "egg" not in d["spec"], drink
+    assert "foamer" in recipes["drinks"]["Whisky Sour"]["spec"]
+    codes = {str(c).upper() for spec in recipes["ingredients"].values()
+             for c in spec["products"]}
+    bought = {str(c).upper() for c in sl.values("product_code")}
+    assert codes <= bought, f"recipes point at products nobody buys: {codes - bought}"
