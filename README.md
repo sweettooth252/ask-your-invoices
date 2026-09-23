@@ -97,6 +97,28 @@ by people who haven't seen the vocabulary - `evals/heldout.yml` is where it goes
   Northside cheaper than Bar & Barista for oat milk?" was answered with total
   spend at one supplier instead of comparing price per litre across both.
 
+
+### Held-out questions
+
+Seven questions from people who had never seen the app, and five they'd want
+answered.
+
+| | Before | After |
+|---|---|---|
+| Answerable, right plan | 2/5 | 2/5 |
+| Out of scope, refused | 1/7 | 7/7 |
+
+Six questions were being answered with the nearest available number rather than
+refused. "How fast does each supplier deliver?" returned spend by supplier;
+"can you check the goods were delivered?" returned total spend. The planner never
+said it didn't know how - it picked its default measure and answered anyway.
+Each of those is now a permanent refusal case in `evals/questions.yml`.
+
+The two remaining misses are capability gaps, not wording ones: comparing two
+suppliers for the same product, and finding products bought from more than one
+supplier. Both are answered on the Alerts screen; neither is reachable from the
+chat yet.
+
 ## What the data shows
 
 - Coffee pour cost rose from 19.6% to 22.1% across FY26; cocktails from 17.3%

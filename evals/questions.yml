@@ -99,6 +99,17 @@ refuse:
   - q: Which barista wastes the most milk?
     why: No staff data. Found by the first held-out question - "barista" used to match the supplier Bar & Barista Supplies.
 
+  - q: How fast does each supplier deliver?
+    why: Invoices carry no delivery times. A held-out question; used to be answered with spend.
+  - q: Which supplier has the best customer feedback?
+    why: No customer data at all. A held-out question; used to be answered with spend.
+  - q: Can you check if the goods on an invoice were actually delivered?
+    why: No purchase orders or signed dockets - the missing leg of a three-way match.
+  - q: Which products look like the same thing but have different names on different invoices?
+    why: Fuzzy name matching lives on the Alerts screen, not in a single measure.
+  - q: Have we been billed twice for anything?
+    why: Duplicate billing compares invoices to each other; it belongs on the Alerts screen.
+
 guard:
   - q: What was the average price per unit by category?
     why: Categories mix litres, kilos and units.

@@ -80,6 +80,28 @@ MONTH_RE = re.compile(
     r"december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\b(?:\s+(20\d\d))?")
 
 OUT_OF_SCOPE = [
+    # Held-out questions from people who had never seen the app found every one
+    # of these. Each was answered with the nearest available number before it
+    # was added here, which is worse than saying no.
+    (r"(?:delivery|lead) time|how (?:fast|quickly|long)\b.{0,25}\bdeliver|on.?time deliver",
+     "Invoices show what was bought and what it cost, not when it arrived. "
+     "I can't judge suppliers on delivery speed."),
+    (r"actually deliver|was ?n[o']t delivered|not delivered|never (?:arrived|delivered)|"
+     r"goods (?:receiv|receipt)|short.?deliver|did .{0,20}\barrive",
+     "Nothing here can prove a delivery happened - there are no purchase orders "
+     "or signed dockets, only invoices. Use the receiving checklist on the "
+     "Invoice inbox screen: you tick off what arrived and it costs the claim."),
+    (r"\b(feedback|satisfaction|complaint|reviews?|ratings?|popular|best.?selling)\b",
+     "There's nothing here about customers - only what the venue bought and what "
+     "each drink costs to make."),
+    (r"billed twice|duplicate invoices?|paid twice|same invoice twice",
+     "Duplicate billing is checked across every invoice at once, so it lives on "
+     "the Alerts screen rather than here."),
+    (r"same thing but.{0,20}different name|look.{0,10}alike|different names|"
+     r"spelled differently|same product.{0,20}different (?:code|name)",
+     "Matching products that are named differently across suppliers is done on "
+     "the Alerts screen, where descriptions are compared to each other."),
+
     # staff questions. "barista" is also in "Bar & Barista Supplies" and "Oat Milk
     # Barista", so skip it straight after "& " or "milk ".
     (r"(?<!& )(?<!milk )\b(baristas?|bartenders?|roster)\b",

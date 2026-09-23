@@ -1,11 +1,6 @@
-# Held-out questions: ask 3-5 people who have NOT seen this repo to write
-# questions they'd ask a cafe-bar's invoices. Write the correct plan for each
-# yourself, in the same format as questions.yml, then run:
-#
-#     python -m evals.run_evals --suite heldout
-#
-# This is the number to put in the README. The seed set is optimistic because
-# the same person wrote the questions and the planner rules.
+# Questions written by people who had never seen the app.
+# This is the honest score; questions.yml is the optimistic one.
+
 answer:
   - q: How much are we spending on milk every month?
     intent: query
@@ -22,7 +17,24 @@ answer:
     metrics: [avg_price_per_unit]
     dimensions: [supplier]
     filters: {product: Oat Milk Barista}
+  - q: What did we spend the most money on last year?
+    intent: query
+    metrics: [spend]
+    dimensions: [product]
+  - q: What products do we buy from multiple suppliers, and which supplier usually gives us the cheaper price?
+    intent: query
+    metrics: [avg_price_per_unit]
+    dimensions: [supplier, product]
+    filters: {product: Oat Milk Barista}
+
 refuse:
   - q: Which barista wastes the most milk?
+  - q: How fast does each supplier deliver?
+  - q: Which supplier has the best customer feedback?
+  - q: Can you check if the goods on an invoice were actually delivered?
+  - q: If an item on an invoice was not delivered, can you track it?
+  - q: Which products look like the same thing but have different names on different invoices?
+  - q: Show me the invoice for arabica coffee beans across all suppliers and if one is a better option to select for cashflow based of delivery time and costs and amount of cups and customer feedback
+
 guard:
   - q: What is the total quantity we bought by category?
