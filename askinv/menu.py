@@ -52,68 +52,111 @@ def ingredient_prices(sl: SemanticLayer, grain: str) -> pd.DataFrame:
     return df.rename(columns={grain: "period"})
 
 
+def price_map(sl: SemanticLayer, grain: str, ingredients: dict):
+    """Per ingredient, per period: the volume-weighted price actually paid, or
+    the last price paid if nothing was delivered that period."""
+    prices = ingredient_prices(sl, grain)
+    periods = sorted(prices["period"].unique())
+
+    ing_price = {}
+    for name, spec in ingredients.items():
+        codes = [str(c) for c in spec["products"]]
+        rows = prices[prices["product_code"].isin(codes)]
+        if rows.empty:
+            raise RecipeError(f"Ingredient '{name}' matches no purchased product {codes}.")
+        units = set(rows["unit"])
+        if len(units) > 1:
+            raise RecipeError(f"'{name}' mixes units {units} across its products.")
+        unit = units.pop()
+        last = None
+        for p in periods:
+            r = rows[rows["period"] == p]
+            if len(r) and r["quantity"].sum() > 0:
+                last = (r["spend"].sum() / r["quantity"].sum(), False)
+                ing_price[(name, p)] = (last[0], unit, False)
+            elif last is not None:
+                ing_price[(name, p)] = (last[0], unit, True)
+        first = next(((n, p) for (n, p) in ing_price if n == name), None)
+        if first:   # back-fill periods before the first purchase
+            for p in periods:
+                if (name, p) not in ing_price:
+                    ing_price[(name, p)] = (ing_price[first][0], unit, True)
+    return ing_price, periods
+
+
+def batch_divisor(drink_spec: dict) -> float:
+    """A drink can be made in a batch: brew 2.5 litres of filter, pour ten cups.
+    `batch: {makes: 10}` says the amounts below are for ten serves, so the cost
+    per serve is the batch cost divided by ten."""
+    batch = drink_spec.get("batch") or {}
+    makes = float(batch.get("makes", 1) or 1)
+    if makes <= 0:
+        raise RecipeError("A batch has to make at least one serve.")
+    return makes
+
+
+def cost_spec(spec: dict, ingredients: dict, prices_at_period: dict,
+              makes: float = 1.0, label: str = "drink"):
+    """Price one spec at one period's prices. Returns (cost per serve, rows).
+
+    This is the only place a drink's cost is worked out, so the dashboard, the
+    chat and the what-if editor can never use different arithmetic.
+    """
+    rows, total, carried_any = [], 0.0, False
+    for ing, amount_text in spec.items():
+        if ing not in ingredients:
+            raise RecipeError(f"{label} uses unknown ingredient '{ing}'.")
+        if (ing) not in prices_at_period:
+            raise RecipeError(f"No price for '{ing}' in this period.")
+        ppu, unit, carried = prices_at_period[ing]
+        qty, qty_unit = _amount(amount_text)
+        y = ingredients[ing].get("yield")
+        if qty_unit != unit:
+            if y is None:
+                raise RecipeError(
+                    f"{label}: '{ing}' is used in {qty_unit} but bought in "
+                    f"{unit}. Add a yield to recipes.yml.")
+            qty = qty / y              # e.g. litres of juice -> kilos of fruit
+        qty = qty * (1 + ingredients[ing].get("waste", 0))   # spilled, dumped, over-poured
+        qty = qty / makes              # a batch spec is written for several serves
+        cost = qty * ppu
+        total += cost
+        carried_any = carried_any or carried
+        rows.append({"ingredient": ing, "amount_label": str(amount_text),
+                     "used_qty": qty, "unit": unit, "price_per_unit": ppu,
+                     "cost": cost, "carried_forward": int(carried)})
+    return total, rows, carried_any
+
+
+def prices_at(ing_price: dict, period: str, ingredients: dict) -> dict:
+    """The price book for one period: ingredient -> (price, unit, carried)."""
+    return {name: ing_price[(name, period)] for name in ingredients
+            if (name, period) in ing_price}
+
+
 def build_costs(sl: SemanticLayer, recipes=None):
     recipes = recipes or load_recipes()
     ingredients, drinks = recipes["ingredients"], recipes["drinks"]
     detail, summary = [], []
 
     for grain in ("month", "quarter"):
-        prices = ingredient_prices(sl, grain)
-        periods = sorted(prices["period"].unique())
-
-        # per ingredient, per period: volume-weighted price, or carried forward
-        ing_price = {}
-        for name, spec in ingredients.items():
-            codes = [str(c) for c in spec["products"]]
-            rows = prices[prices["product_code"].isin(codes)]
-            if rows.empty:
-                raise RecipeError(f"Ingredient '{name}' matches no purchased product {codes}.")
-            units = set(rows["unit"])
-            if len(units) > 1:
-                raise RecipeError(f"'{name}' mixes units {units} across its products.")
-            unit = units.pop()
-            last = None
-            for p in periods:
-                r = rows[rows["period"] == p]
-                if len(r) and r["quantity"].sum() > 0:
-                    last = (r["spend"].sum() / r["quantity"].sum(), False)
-                    ing_price[(name, p)] = (last[0], unit, False)
-                elif last is not None:
-                    ing_price[(name, p)] = (last[0], unit, True)
-            first = next(((n, p) for (n, p) in ing_price if n == name), None)
-            if first:   # back-fill periods before the first purchase
-                for p in periods:
-                    if (name, p) not in ing_price:
-                        ing_price[(name, p)] = (ing_price[first][0], unit, True)
+        ing_price, periods = price_map(sl, grain, ingredients)
 
         for drink, d in drinks.items():
             price_ex = round(d["price"] / 1.1, 4)
+            makes = batch_divisor(d)
             for p in periods:
-                total, carried_any = 0.0, False
-                for ing, amount_text in d["spec"].items():
-                    if ing not in ingredients:
-                        raise RecipeError(f"{drink} uses unknown ingredient '{ing}'.")
-                    ppu, unit, carried = ing_price[(ing, p)]
-                    qty, qty_unit = _amount(amount_text)
-                    y = ingredients[ing].get("yield")
-                    if qty_unit != unit:
-                        if y is None:
-                            raise RecipeError(
-                                f"{drink}: '{ing}' is used in {qty_unit} but bought in "
-                                f"{unit}. Add a yield to recipes.yml.")
-                        qty = qty / y          # e.g. litres of juice -> kilos of fruit
-                    cost = qty * ppu
-                    total += cost
-                    carried_any = carried_any or carried
-                    detail.append({"drink": drink, "drink_type": d["type"], "grain": grain,
-                                   "period": p, "ingredient": ing,
-                                   "amount_label": str(amount_text), "used_qty": qty,
-                                   "unit": unit, "price_per_unit": ppu, "cost": cost,
-                                   "carried_forward": int(carried)})
+                book = prices_at(ing_price, p, ingredients)
+                total, rows, carried_any = cost_spec(d["spec"], ingredients, book,
+                                                     makes=makes, label=drink)
+                for r in rows:
+                    detail.append({"drink": drink, "drink_type": d["type"],
+                                   "grain": grain, "period": p, **r})
                 summary.append({"drink": drink, "drink_type": d["type"], "grain": grain,
                                 "period": p, "cost_per_serve": total,
                                 "menu_price_inc_gst": d["price"],
                                 "menu_price_ex_gst": price_ex,
+                                "serves_per_batch": makes,
                                 "any_carried_forward": int(carried_any)})
 
     return pd.DataFrame(summary), pd.DataFrame(detail)

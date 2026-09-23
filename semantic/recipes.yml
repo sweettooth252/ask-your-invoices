@@ -67,7 +67,11 @@ drinks:
   Batch Filter:
     type: Coffee
     price: 5.00
-    spec: {filter_beans: 15g}
+    # Brewed in a batch: 150g of filter beans makes a 2.5L brew, which pours ten
+    # cups. Write the spec the way the bar actually makes it, and let the code
+    # divide. Cost per serve is the batch cost / 10.
+    batch: {makes: 10}
+    spec: {filter_beans: 150g}
   Cold Brew on Ice:
     type: Coffee
     price: 6.00
