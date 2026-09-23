@@ -96,6 +96,34 @@ if earlier:
 
 st.divider()
 
+# ------------------------------------------------- billing that looks wrong
+st.subheader("Billed twice?")
+dupes = ins.duplicate_invoices()
+if dupes.empty:
+    st.success("No invoice looks like a repeat of another.")
+else:
+    st.error(f"{len(dupes)} possible duplicate(s), "
+             f"{money(float(dupes['at_risk'].sum()), cents=True)} at risk.")
+    st.dataframe(dupes, hide_index=True, use_container_width=True)
+    st.caption("Same supplier, same amount, same day, different invoice number. Both "
+               "pages reconcile perfectly, which is exactly why this needs comparing "
+               "rather than reading. Check whether one is a re-issue before paying.")
+    download(dupes, "possible_duplicates.csv", key="dl_dupes")
+
+st.subheader("Stopped arriving")
+rhythm = ins.delivery_rhythm()
+if rhythm.empty:
+    st.success("Everything that used to arrive on a rhythm still is.")
+else:
+    st.warning(f"{len(rhythm)} product(s) haven't arrived for far longer than usual.")
+    st.dataframe(rhythm, hide_index=True, use_container_width=True)
+    st.caption("Worked out from each product's own delivery rhythm, not a fixed rule. "
+               "Either it was dropped on purpose or an order was missed - the invoices "
+               "can't tell which, so this is a question, not a finding.")
+    download(rhythm, "stopped_arriving.csv", key="dl_rhythm")
+
+st.divider()
+
 # --------------------------------------------------------------- data quality
 st.subheader("Can these numbers be trusted?")
 dq = ins.data_quality(sl)

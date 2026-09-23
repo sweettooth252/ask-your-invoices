@@ -396,3 +396,117 @@ def pour_cost(cost_per_serve: float, menu_price_inc_gst: float) -> float:
 def price_for_target_pour_cost(cost_per_serve: float, target: float = 0.20) -> float:
     """The menu price (including GST) this drink needs to hit a target pour cost."""
     return (cost_per_serve / target) * 1.1 if target else float("nan")
+
+
+# ------------------------------------------------- did we get what we paid for
+# Invoices alone cannot prove a delivery happened - that needs a docket someone
+# signed at the door. What invoices CAN show is billing that doesn't look right:
+# the same delivery billed twice, and a product that has stopped arriving.
+def duplicate_invoices(tolerance_days: int = 3) -> pd.DataFrame:
+    """Invoices that look like the same delivery billed twice.
+
+    Two tests: the same invoice number twice, and the same supplier billing the
+    same amount on the same day (or within a few days) under different numbers.
+    A re-issued invoice reconciles perfectly on both pages, so nothing but a
+    comparison catches it.
+    """
+    con = connect(DB_PATH)
+    try:
+        df = con.execute("""
+            SELECT f.invoice_no, s.supplier_name, d.business_date, f.subtotal_ex_gst,
+                   f.source_file
+            FROM fct_invoice f
+            JOIN dim_supplier s ON f.supplier_id = s.supplier_id
+            JOIN dim_date d ON f.date_key = d.date_key
+            ORDER BY s.supplier_name, d.business_date""").df()
+    finally:
+        con.close()
+
+    df["business_date"] = pd.to_datetime(df["business_date"])
+    rows = []
+
+    repeated = df[df.duplicated("invoice_no", keep=False)]
+    for no, grp in repeated.groupby("invoice_no"):
+        rows.append({"kind": "same invoice number", "supplier": grp["supplier_name"].iloc[0],
+                     "invoices": ", ".join(grp["invoice_no"]), "amount_ex_gst": float(grp["subtotal_ex_gst"].iloc[0]),
+                     "dates": ", ".join(grp["business_date"].dt.strftime("%Y-%m-%d")),
+                     "at_risk": float(grp["subtotal_ex_gst"].iloc[1:].sum())})
+
+    for (supplier, amount), grp in df.groupby(["supplier_name", "subtotal_ex_gst"]):
+        if len(grp) < 2:
+            continue
+        grp = grp.sort_values("business_date")
+        gaps = grp["business_date"].diff().dt.days
+        close = grp[(gaps <= tolerance_days) | (gaps.shift(-1) <= tolerance_days)]
+        if len(close) >= 2 and close["invoice_no"].nunique() > 1:
+            rows.append({"kind": "same amount, same days", "supplier": supplier,
+                         "invoices": ", ".join(close["invoice_no"]),
+                         "amount_ex_gst": float(amount),
+                         "dates": ", ".join(close["business_date"].dt.strftime("%Y-%m-%d")),
+                         "at_risk": float(amount) * (len(close) - 1)})
+
+    out = pd.DataFrame(rows)
+    return out.sort_values("at_risk", ascending=False).reset_index(drop=True) if len(out) else out
+
+
+def delivery_rhythm(min_deliveries: int = 4, overdue_factor: float = 2.5,
+                    min_days: int = 21) -> pd.DataFrame:
+    """Products that used to arrive on a rhythm and have stopped.
+
+    A bar doesn't stop ordering milk. If something that came every few days
+    hasn't come for weeks, either it was dropped on purpose or an order was
+    missed - and the person who would know is the one this table is for.
+    """
+    con = connect(DB_PATH)
+    try:
+        df = con.execute("""
+            SELECT p.product_name, p.code, s.supplier_name, d.business_date
+            FROM fct_invoice_line l
+            JOIN dim_product p ON l.product_id = p.product_id
+            JOIN dim_supplier s ON l.supplier_id = s.supplier_id
+            JOIN dim_date d ON l.date_key = d.date_key
+            GROUP BY 1, 2, 3, 4""").df()
+    finally:
+        con.close()
+
+    df["business_date"] = pd.to_datetime(df["business_date"])
+    as_at = df["business_date"].max()
+
+    rows = []
+    for (product, code, supplier), grp in df.groupby(["product_name", "code", "supplier_name"]):
+        days = grp["business_date"].sort_values()
+        if len(days) < min_deliveries:
+            continue
+        typical = float(days.diff().dt.days.median())
+        last = days.iloc[-1]
+        since = int((as_at - last).days)
+        if typical > 0 and since > max(typical * overdue_factor, min_days):
+            rows.append({"product": product, "code": code, "supplier": supplier,
+                         "usual_gap_days": round(typical, 1), "last_delivery": last.date(),
+                         "days_since": since, "deliveries": len(days),
+                         "overdue_by": round(since / typical, 1)})
+    out = pd.DataFrame(rows)
+    return (out.sort_values("overdue_by", ascending=False).reset_index(drop=True)
+            if len(out) else out)
+
+
+def claim_value(lines: pd.DataFrame, received: dict) -> pd.DataFrame:
+    """Cost what a short delivery is worth, line by line.
+
+    `received` maps a line number to the quantity actually received. Anything
+    less than the quantity billed becomes a credit to claim from the supplier.
+    """
+    rows = []
+    for _, line in lines.iterrows():
+        billed = float(line["qty"] or 0)
+        got = float(received.get(line["line"], billed))
+        short = max(billed - got, 0.0)
+        unit_price = float(line["unit_price_ex_gst"] or 0)
+        rows.append({"line": line["line"], "code": line["code"],
+                     "description": line["description"], "qty_billed": billed,
+                     "qty_received": got, "short": short,
+                     "unit_price_ex_gst": unit_price,
+                     "claim_ex_gst": round(short * unit_price, 2)})
+    out = pd.DataFrame(rows)
+    out.attrs["claim_total"] = round(float(out["claim_ex_gst"].sum()), 2)
+    return out

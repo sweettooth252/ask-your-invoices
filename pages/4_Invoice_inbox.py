@@ -99,6 +99,34 @@ for up in uploads:
     download(df, f"check_{a['invoice_no'] or up.name}.csv", "Download this check",
              key=f"dl_{up.name}")
 
+    # ------------------------------------------------ what actually turned up
+    with st.expander("Receiving checklist - tick off what actually arrived"):
+        st.caption("An invoice cannot prove a delivery happened; only the person at "
+                   "the door knows that. Set the quantity received on any short line "
+                   "and the credit to claim is costed for you.")
+        counts = pd.DataFrame({"line": df["line"], "code": df["code"],
+                               "description": df["description"],
+                               "qty_billed": df["qty"],
+                               "qty_received": df["qty"]})
+        ticked = st.data_editor(counts, hide_index=True, use_container_width=True,
+                                disabled=["line", "code", "description", "qty_billed"],
+                                key=f"recv_{up.name}")
+        received = {int(r["line"]): float(r["qty_received"] or 0)
+                    for _, r in ticked.iterrows()}
+        claim = ins.claim_value(df, received)
+        short = claim[claim["short"] > 0]
+        if short.empty:
+            st.success("Everything on this invoice was received in full.")
+        else:
+            st.error(f"Short delivery: {len(short)} line(s), "
+                     f"{money(claim.attrs['claim_total'], cents=True)} to claim back "
+                     "ex GST.")
+            st.dataframe(short, hide_index=True, use_container_width=True)
+            download(short, f"credit_claim_{a['invoice_no'] or up.name}.csv",
+                     "Download the credit claim", key=f"dl_claim_{up.name}")
+            st.caption("Send that to the supplier and check the credit appears on a "
+                       "later invoice. Until it does, the claim is open.")
+
     saved.append((up, invoice))
 
 st.divider()

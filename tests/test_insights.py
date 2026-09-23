@@ -10,6 +10,7 @@ Run after:  python make_invoices.py && python -m askinv.ingest
 
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from askinv import insights as ins
@@ -256,3 +257,45 @@ def test_a_sour_uses_foamer_not_egg(sl):
              for c in spec["products"]}
     bought = {str(c).upper() for c in sl.values("product_code")}
     assert codes <= bought, f"recipes point at products nobody buys: {codes - bought}"
+
+
+# -------------------------------------------- did we get what we paid for
+def test_the_same_delivery_billed_twice_is_found():
+    """A re-issued invoice reconciles perfectly on both pages. Only comparing
+    invoices to each other catches it, which is why this check exists."""
+    d = ins.duplicate_invoices()
+    assert not d.empty
+    hit = d[d["invoices"].str.contains("BB-1099")]
+    assert len(hit) == 1
+    assert hit.iloc[0]["at_risk"] == pytest.approx(hit.iloc[0]["amount_ex_gst"], abs=0.01)
+
+
+def test_delivery_rhythm_only_flags_things_with_a_rhythm_to_break():
+    """A product bought twice has no rhythm, so it can't be overdue. Flagging it
+    would be the tool crying wolf."""
+    r = ins.delivery_rhythm()
+    if not r.empty:
+        assert (r["deliveries"] >= 4).all()
+        assert (r["days_since"] > r["usual_gap_days"] * 2.5).all()
+
+
+def test_a_short_delivery_is_costed_at_the_invoice_price():
+    """Three cartons billed, two delivered: the claim is one carton at the price
+    on that invoice, not at some average."""
+    lines = pd.DataFrame([
+        {"line": 1, "code": "D-101", "description": "Full Cream Milk", "qty": 3.0,
+         "unit_price_ex_gst": 26.10},
+        {"line": 2, "code": "D-140", "description": "Oat Milk Barista", "qty": 1.0,
+         "unit_price_ex_gst": 39.60},
+    ])
+    claim = ins.claim_value(lines, received={1: 2.0})
+    assert claim.attrs["claim_total"] == pytest.approx(26.10, abs=0.01)
+    assert claim.loc[claim["line"] == 1, "short"].iloc[0] == 1.0
+    assert claim.loc[claim["line"] == 2, "claim_ex_gst"].iloc[0] == 0.0
+
+
+def test_nothing_short_means_nothing_to_claim():
+    lines = pd.DataFrame([{"line": 1, "code": "D-101", "description": "Milk",
+                           "qty": 3.0, "unit_price_ex_gst": 26.10}])
+    claim = ins.claim_value(lines, received={1: 3.0})
+    assert claim.attrs["claim_total"] == 0.0

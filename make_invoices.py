@@ -236,6 +236,15 @@ def build_invoices():
             inv["total_inc_gst"] = round(inv["subtotal_ex_gst"] + inv["gst"], 2)
             invoices.append(inv)
             d += timedelta(days=sup["cadence"])
+
+    # 9. A re-issued invoice: the same delivery billed twice under two numbers,
+    #    same date, same lines, same total. Paying both is one of the easiest
+    #    ways for a venue to lose money, and nothing on either page looks wrong.
+    original = next(i for i in invoices
+                    if i["supplier_key"] == "barsupply" and i["invoice_date"] == "2026-02-10")
+    copy = json.loads(json.dumps(original))
+    copy["invoice_no"] = "BB-1099"
+    invoices.append(copy)
     return invoices
 
 
