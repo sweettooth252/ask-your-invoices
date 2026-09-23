@@ -6,10 +6,11 @@ Built by Linh Ngan Nguyen (Master of Business Analytics). The idea comes from wo
 
 **Live demo:** https://ask-your-invoices-linh.streamlit.app/
 
-Drop in a year of supplier invoice PDFs. Ask in plain English what you spend,
-what you pay per litre, or what an espresso martini costs to make - and why it
-costs more than it did. Every answer comes with the invoice lines that prove it,
-and the assistant refuses anything it can't prove.
+Six suppliers, 326 invoices, five different invoice layouts. The app opens
+on a dashboard: what the venue spent, whether that was price or volume, what
+each of 33 drinks costs to pour, and what's worth a phone call to a supplier.
+Every answer comes with the invoice lines that prove it, and the assistant
+refuses anything it can't prove.
 
 ![Ask Your Invoices explaining why the Espresso Martini costs more to make](docs/screenshot.png)
 
